@@ -429,6 +429,7 @@ arch-chroot /mnt /bin/bash -e <<EOF
     mkdir /.snapshots
     mount -a &>/dev/null
     chmod 750 /.snapshots
+    chmod 0700 /boot
 
     # Installing systemd-boot.
     bootctl install
@@ -487,7 +488,7 @@ done
 
 arch-chroot /mnt sudo -u $username /bin/bash -e <<EOF
 cd /tmp 
-git clone https://aur.archlinux.org/packages/yay-bin.git
+git clone https://aur.archlinux.org/yay-bin.git
 cd yay-bin 
 makepkg -si --noconfirm
 EOF

@@ -359,7 +359,7 @@ microcode_detector
 
 # Pacstrap (setting up a base sytem onto the new root).
 info_print "Installing the base system (it may take a while)."
-pacstrap -K /mnt base "$kernel" "$microcode" linux-firmware "$kernel"-headers btrfs-progs grub grub-btrfs rsync efibootmgr snapper reflector snap-pac zram-generator sudo gnome git &>/dev/null
+pacstrap -K /mnt base "$kernel" "$microcode" linux-firmware "$kernel"-headers btrfs-progs grub grub-btrfs rsync efibootmgr snapper reflector snap-pac zram-generator sudo booster &>/dev/null
 
 # Setting up the hostname.
 echo "$hostname" > /mnt/etc/hostname
@@ -394,16 +394,9 @@ HOOKS=(systemd autodetect keyboard sd-vconsole modconf block sd-encrypt filesyst
 EOF
 
 # Setting up LUKS2 encryption in grub.
-info_print "Setting up Systemd-boot config."
+info_print "Setting up UKI config."
 UUID=$(blkid -s UUID -o value $CRYPTROOT)
 # Generate systemd-boot configuration
-mkdir -p /mnt/boot/loader/entries/
-cat <<EOF > /mnt/boot/loader/entries/arch.conf
-title   Arch Linux
-linux   /vmlinuz-linux
-initrd  /initramfs-linux.img
-options root=UUID=$UUID rd.luks.name=$UUID=cryptroot rw
-EOF
 
 # Configuring the system.
 info_print "Configuring the system (timezone, system clock, initramfs, Snapper, systemd-boot)."
@@ -432,7 +425,10 @@ arch-chroot /mnt /bin/bash -e <<EOF
     chmod 0700 /boot
 
     # Installing systemd-boot.
-    bootctl install
+    mkdir -p /efi/EFI/Linux
+    
+    pacman -Sy booster
+    ls /boot
 
 EOF
 
@@ -481,35 +477,35 @@ sed -Ei 's/^#(Color)$/\1\nILoveCandy/;s/^#(ParallelDownloads).*/\1 = 10/' /mnt/e
 
 # Enabling various services.
 info_print "Enabling Reflector, automatic snapshots, BTRFS scrubbing and systemd-oomd."
-services=(reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer grub-btrfs.path systemd-oomd gdm)
+services=(reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer grub-btrfs.path systemd-oomd)
 for service in "${services[@]}"; do
     systemctl enable "$service" --root=/mnt &>/dev/null
 done
 
-arch-chroot /mnt sudo -u $username /bin/bash -e <<EOF
-cd /tmp 
-git clone https://aur.archlinux.org/yay-bin.git
-cd yay-bin 
-makepkg -si --noconfirm
-EOF
-
-arch-chroot /mnt sudo -u $username /bin/bash -e <<EOF
-yay -S --noconfirm morewaita adw-gtk-theme gnome-extensions-cli
-EOF
-
-arch-chroot /mnt sudo -u $username /bin/bash -e <<EOF
-gsettings set org.gnome.desktop.interface icon-theme 'MoreWaita' 
-gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' 
-gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-EOF
-
-arch-chroot /mnt sudo -u $username /bin/bash -e <<EOF
-gext install blur-my-shell@aunetx 
-gext install appindicatorsupport@rgcjonas.gmail.com 
-gext enable appindicatorsupport@rgcjonas.gmail.com
-gext enable blur-my-shell@aunetx
-systemctl --user enable psk.service
-EOF
+# arch-chroot /mnt sudo -u $username /bin/bash -e <<EOF
+# cd /tmp 
+# git clone https://aur.archlinux.org/yay-bin.git
+# cd yay-bin 
+# makepkg -si --noconfirm
+# EOF
+# 
+# arch-chroot /mnt sudo -u $username /bin/bash -e <<EOF
+# yay -S --noconfirm morewaita adw-gtk-theme gnome-extensions-cli
+# EOF
+# 
+# arch-chroot /mnt sudo -u $username /bin/bash -e <<EOF
+# gsettings set org.gnome.desktop.interface icon-theme 'MoreWaita' 
+# gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' 
+# gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+# EOF
+# 
+# arch-chroot /mnt sudo -u $username /bin/bash -e <<EOF
+# gext install blur-my-shell@aunetx 
+# gext install appindicatorsupport@rgcjonas.gmail.com 
+# gext enable appindicatorsupport@rgcjonas.gmail.com
+# gext enable blur-my-shell@aunetx
+# systemctl --user enable psk.service
+# EOF
 
 # Finishing up.
 info_print "Done, you may now wish to reboot (further changes can be done by chrooting into /mnt)."

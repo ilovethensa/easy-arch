@@ -397,6 +397,7 @@ EOF
 info_print "Setting up Systemd-boot config."
 UUID=$(blkid -s UUID -o value $CRYPTROOT)
 # Generate systemd-boot configuration
+mkdir -p /mnt/boot/loader/entries/
 cat <<EOF > /mnt/boot/loader/entries/arch.conf
 title   Arch Linux
 linux   /vmlinuz-linux

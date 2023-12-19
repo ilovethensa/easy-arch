@@ -480,6 +480,30 @@ for service in "${services[@]}"; do
     systemctl enable "$service" --root=/mnt &>/dev/null
 done
 
+arch-chroot /mnt sudo -u $username /bin/bash -e <<EOF
+cd /tmp 
+git clone https://aur.archlinux.org/packages/yay-bin.git
+cd yay-bin 
+makepkg -si --noconfirm
+EOF
+
+arch-chroot /mnt sudo -u $username /bin/bash -e <<EOF
+yay -S --noconfirm morewaita adw-gtk-theme gnome-extensions-cli
+EOF
+
+arch-chroot /mnt sudo -u $username /bin/bash -e <<EOF
+gsettings set org.gnome.desktop.interface icon-theme 'MoreWaita' 
+gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' 
+gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+EOF
+
+arch-chroot /mnt sudo -u $username /bin/bash -e <<EOF
+gext install blur-my-shell@aunetx 
+gext install appindicatorsupport@rgcjonas.gmail.com 
+gext enable appindicatorsupport@rgcjonas.gmail.com
+gext enable blur-my-shell@aunetx
+EOF
+
 # Finishing up.
 info_print "Done, you may now wish to reboot (further changes can be done by chrooting into /mnt)."
 exit
